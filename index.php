@@ -321,11 +321,11 @@ function dumpLiteralValue( $resource )
 
 	if( isset($resource->triple["l"]) && $resource->triple["l"])
 	{
-		$r.="@".$resource->triple["l"];
+		$r.="<span class='lang'>@".$resource->triple["l"].'</span>';
 	}
 	if( isset($resource->triple["d"]) )
 	{
-		$r.="^^".$resource->g->shrinkURI($resource->triple["d"]);
+		$r.="<span class='datatype'>^^".$resource->g->shrinkURI($resource->triple["d"]).'</span>';
 	}
 	return "<span class='literalObject'>$r</span>";
 }
@@ -337,6 +337,6 @@ function dumpValue( $resource )
 		$label = $resource->label();
 	}
 	$href = $resource->uri;
-	$href = "#".htmlentities($resource->uri);
+	#$href = "#".htmlentities($resource->uri);
 	return "<a href='".$href."' title='".$resource->uri."' class='resourceObject'>".$label."</a>";
 }

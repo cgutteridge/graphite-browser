@@ -55,3 +55,6 @@ a.resourceObject {
 	white-space: nowrap;
 	font-size: 70%;
 }
+.lang, .datatype {
+	font-size: 70%;
+}
