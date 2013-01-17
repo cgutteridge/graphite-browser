@@ -143,12 +143,7 @@ if( $n == 0 )
 	print "</body></html>";
 	exit;
 }
-$dump = dumpGraph( $graph );
-foreach( $graph->t["sp"] as $subject_uri=>$foo )
-{
-	$subject = new Graphite_Resource( $graph, $subject_uri );
-
-}
+$dump = dumpGraph( $graph , $uri );
 $dump = preg_replace( "/ href='(_:[^']*)'/"," href='#$1'", $dump );
 
 print preg_replace( "/ href='([^#][^']*)'/e",'" href=\'http://graphite.ecs.soton.ac.uk/browser/?uri=".urlencode("$1")."#$1\'"',$dump );
@@ -189,15 +184,28 @@ function mid_trim( $string, $max )
 
 
 # These functions are copied from the core Graphite code, so we can modify them locally
-function dumpGraph( $graph )
+function dumpGraph( $graph, $uri )
 {
-	$r = array();
-	foreach( $graph->t["sp"] as $subject_uri=>$foo )
+	$r1 = array(); # items with $uri as the prefix
+	$r2 = array(); 
+	$subjects = $graph->t["sp"];
+	ksort( $subjects );
+		
+	foreach( $subjects as $subject_uri=>$dummy )
 	{
 		$subject = new Graphite_Resource( $graph, $subject_uri );
-		$r []= dumpResource( $subject );
+		if( strpos( $subject_uri, $uri ) === 0)
+		{
+			# first list items which are the uri, or have the uri
+			# as their prefix
+			$r1 []= dumpResource( $subject );
+		}
+		else
+		{
+			$r2 []= dumpResource( $subject );
+		}
 	}
-	return join("",$r );
+	return join("",$r1 ).join( "",$r2);
 }
 function dumpResource( $resource )
 {
