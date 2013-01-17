@@ -19,7 +19,7 @@ if( isset( $_GET["uri"] ) )
 }
 
 header( "Content-type: text/html; charset:utf-8" );
-require_once( "../arc/ARC2.php" );
+require_once( "arc/ARC2.php" );
 require_once( "../Graphite.php" );
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
@@ -109,7 +109,13 @@ foaf:maker
 <tr><td><tt>
 &lt;<a style='text-decoration: none; color: green; ' href='http://graphite.ecs.soton.ac.uk/browser/'>http://graphite.ecs.soton.ac.uk/browser/</a>&gt; 
 rdfs:seeAlso
-&lt;<a style='text-decoration: none; color: green; ' href='http://graphite.ecs.soton.ac.uk/sparqlbrowser/'>http://graphite.ecs.soton.ac.uk/sparqlbrowser/</a>&gt; 
+&lt;<a style='text-decoration: none; color: green; ' href='http://graphite.ecs.soton.ac.uk/sparqlbrowser/'>http://graphite.ecs.soton.ac.uk/sparqlbrowser/</a>&gt; .
+</tt></td></tr>
+
+<tr><td><tt>
+&lt;<a style='text-decoration: none; color: green; ' href='http://graphite.ecs.soton.ac.uk/browser/'>http://graphite.ecs.soton.ac.uk/browser/</a>&gt; 
+rdfs:seeAlso
+&lt;<a style='text-decoration: none; color: green; ' href='http://graphite.ecs.soton.ac.uk/checker/'>http://graphite.ecs.soton.ac.uk/checker/</a>&gt; .
 </tt></td></tr>
 
 </table>
@@ -124,6 +130,7 @@ rdfs:seeAlso
 
 $uri = $_GET['uri'];
 $graph = new Graphite();
+$graph->setDebug( true );
 foreach( file('namespaces') as $line )
 {
 	if( preg_match( '/^\s*#/' , $line ) ) { continue; }
@@ -133,7 +140,7 @@ foreach( file('namespaces') as $line )
 		$graph->ns( $bits[1], $bits[2] );
 	}
 }
-$n = @$graph->load( $uri );
+$n = $graph->load( $uri );
 print "<h1 style='margin:0px'>".mid_trim($uri,80)." <small>[<a href='$uri'>view</a>]</small></h1>";
 print "<p style='font-size: 80%'><a href='/browser/'>Q&amp;D RDF Browser</a> is powered by <a href='/'>Graphite</a> and <a href='http://arc.semsol.org/'>ARC2</a> and hosted by <a href='http://www.ecs.soton.ac.uk/'>ECS</a> at the <a href='http://www.soton.ac.uk/'>University of Southampton</a>.</p>";
 print "<p style='margin:0px'>$n Triples</p>";
@@ -187,7 +194,7 @@ foreach( $graph->t["sp"] as $subject_uri=>$foo )
 		$s = "DUMP:".$subject_uri." -->";
 		$foo = split( $s, $dump );
 		$dump = $foo[0].$s;
-		$dump.= '<a href="'.$img->uri.'"><img style="margin: 0em 0em 0.5em 1em; border:0px;float:right;clear:right;max-width:200px" src="'.$img->uri.'" /></a>';
+		$dump.= '<a href="'.$img->toString().'"><img style="margin: 0em 0em 0.5em 1em; border:0px;float:right;clear:right;max-width:200px" src="'.$img->toString().'" /></a>';
 		$dump.= $foo[1];
 	}	
 }
