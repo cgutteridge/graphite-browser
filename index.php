@@ -167,7 +167,7 @@ foreach( $graph->t["sp"] as $subject_uri=>$foo )
 		if( $geo->has( "vcard:longitude" ) ) { $long = $geo->getString( "vcard:longitude" ); }
 	}
 
-	if( 0 && $subject->has( "spatialrelations:easting" ) && $subject->has( "spatialrelations:northing" ) )
+	if( false && $subject->has( "spatialrelations:easting" ) && $subject->has( "spatialrelations:northing" ) )
 	{
 		$ll = LatLonPointUTMtoLL(
 			$subject->get( "spatialrelations:easting" )->toString(),
