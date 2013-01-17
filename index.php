@@ -30,26 +30,7 @@ require_once( "Graphite/Graphite.php" );
    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 </head>
 <body>
-   <style type='text/css'>
-body {
-	font-family: sans-serif;
-}
-.bookmarklet {
-	border-top: solid 1px #c6c6c6;
-	border-left: solid 1px #c6c6c6;
-	border-bottom: solid 1px #969696;
-	border-right: solid 1px #969696;
-	background-color: #e9e9e9;
-	padding: 2px;
-	text-decoration: none;
-	color: #000000;
-	font-family: sans-serif;
-	font-size: 90%;
-	font-weight: bold;
-}
-a:hover { text-decoration: underline !important; }
-
-   </style>
+<style type="text/css" media="all">@import url("browser.css")</style>
 
 <?php
 
@@ -152,51 +133,11 @@ if( $n == 0 )
 	print "</body></html>";
 	exit;
 }
-$dump = $graph->dump( array("label"=>1, "labeluris"=>1 ) );
+$dump = dumpGraph( $graph );
 foreach( $graph->t["sp"] as $subject_uri=>$foo )
 {
 	$subject = new Graphite_Resource( $graph, $subject_uri );
 
-	$lat = null; $long = null;
-	if( $subject->has( "geo:lat" ) ) { $lat = $subject->getString( "geo:lat" ); }
-	if( $subject->has( "geo:long" ) ) { $long = $subject->getString( "geo:long" ); }
-	if( $subject->has( "vcard:geo" ) )
-	{	
-		$geo = $subject->get( "vcard:geo" );
-		if( $geo->has( "vcard:latitude" ) ) { $lat = $geo->getString( "vcard:latitude" ); }
-		if( $geo->has( "vcard:longitude" ) ) { $long = $geo->getString( "vcard:longitude" ); }
-	}
-
-	if( false && $subject->has( "spatialrelations:easting" ) && $subject->has( "spatialrelations:northing" ) )
-	{
-		$ll = LatLonPointUTMtoLL(
-			$subject->get( "spatialrelations:easting" )->toString(),
-			$subject->get( "spatialrelations:northing" )->toString()
-		);
-		$lat = $ll["lat"];
-		$long = $ll["lng"];
-		print_r( $ll );
-	}
-
-	if( isset( $lat ) && isset( $long ) )
-	{
-		$llstr = "$lat,$long";
-		$s = "DUMP:".$subject_uri." -->";
-		$foo = split( $s, $dump );
-		$dump = $foo[0].$s;
-		$dump.= '<img style="margin: 0em 0em 0.5em 1em; float:right;clear:right" width="250" height="250" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="http://maps.google.com/maps/api/staticmap?center='.$llstr.'&size=250x250&maptype=hybrid&sensor=false&markers=color:blue|label:X|'.$llstr.'" />';
-		$dump.= @$foo[1];
-	}
-	elseif( $subject->has( "foaf:img", "foaf:depiction", "foaf:logo" ) )
-	{
-		$img = $subject->get( "foaf:img", "foaf:depiction", "foaf:logo" );
-		if( $img->has( "foaf:thumbnail" ) ) { $img = $img->get("foaf:thumbnail"); }
-		$s = "DUMP:".$subject_uri." -->";
-		$foo = split( $s, $dump );
-		$dump = $foo[0].$s;
-		$dump.= '<a href="'.$img->toString().'"><img style="margin: 0em 0em 0.5em 1em; border:0px;float:right;clear:right;max-width:200px" src="'.$img->toString().'" /></a>';
-		$dump.= $foo[1];
-	}	
 }
 $dump = preg_replace( "/ href='(_:[^']*)'/"," href='#$1'", $dump );
 
@@ -235,4 +176,134 @@ function mid_trim( $string, $max )
 	}
 	return htmlspecialchars($string);
 }
-?>
+
+
+# These functions are copied from the core Graphite code, so we can modify them locally
+function dumpGraph( $graph )
+{
+	$r = array();
+	foreach( $graph->t["sp"] as $subject_uri=>$foo )
+	{
+		$subject = new Graphite_Resource( $graph, $subject_uri );
+		$r []= dumpResource( $subject );
+	}
+	return join("",$r );
+}
+function dumpResource( $resource )
+{
+	$r = "";
+	$plist = array();
+	foreach( $resource->relations() as $prop )
+	{
+		$olist = array();
+		$all = $resource->all( $prop );
+		foreach( $all as $obj )
+		{
+			if( is_a( $obj, "Graphite_Literal" ) )
+			{
+				$olist []= dumpLiteralValue( $obj );
+			}
+			else
+			{
+				$olist []= dumpValue( $obj );
+			}
+		}
+		if( is_a( $prop, "Graphite_InverseRelation" ) )
+		{
+			$pattern = "<span class='arrow'>&larr;</span> is <a class='inverseRelation' title='%s' href='%s'>%s</a> of <span class='arrow'>&larr;</span> %s";
+		}
+		else
+		{
+			$pattern = "<span class='arrow'>&rarr;</span> <a title='%s' class='relation' href='%s'>%s</a> <span class='arrow'>&rarr;</span> %s";
+		}
+		$prop = $prop->toString();
+		$plist []= sprintf( $pattern, htmlentities($prop), htmlentities($prop), htmlentities($resource->g->shrinkURI($prop)), join( ", ",$olist ));
+	}
+	$r.= "\n<a name='".htmlentities($resource->uri)."'></a><div class='resourceBox'>\n";
+	$label = $resource->label();
+	if( $label == "[NULL]" ) { $label = ""; } else { $label = "<strong>".htmlentities($label)."</strong>"; }
+	if( $resource->has( "rdf:type" ) )
+	{
+		if( $resource->get( "rdf:type" )->hasLabel() )
+		{
+			$typename = $resource->get( "rdf:type" )->label();
+		}
+		else
+		{
+			$bits = preg_split( "/[\/#]/", @$resource->get( "rdf:type" )->uri );
+			$typename = array_pop( $bits );
+			$typename = preg_replace( "/([a-z])([A-Z])/","$1 $2",$typename );
+		}
+		$r .= preg_replace( "/>a ([AEIOU])/i", ">an $1", "<div style='float:right'>a ".htmlentities($typename)."</div>" );
+	}
+
+	if( $label != "" ) { $r.="<div>$label</div>"; }
+
+	$lat = null; $long = null;
+	if( $resource->has( "geo:lat" ) ) { $lat = $resource->getString( "geo:lat" ); }
+	if( $resource->has( "geo:long" ) ) { $long = $resource->getString( "geo:long" ); }
+	if( $resource->has( "vcard:geo" ) )
+	{	
+		$geo = $resource->get( "vcard:geo" );
+		if( $geo->has( "vcard:latitude" ) ) { $lat = $geo->getString( "vcard:latitude" ); }
+		if( $geo->has( "vcard:longitude" ) ) { $long = $geo->getString( "vcard:longitude" ); }
+	}
+
+	if( false && $resource->has( "spatialrelations:easting" ) && $resource->has( "spatialrelations:northing" ) )
+	{
+		$ll = LatLonPointUTMtoLL(
+			$resource->get( "spatialrelations:easting" )->toString(),
+			$resource->get( "spatialrelations:northing" )->toString()
+		);
+		$lat = $ll["lat"];
+		$long = $ll["lng"];
+		print_r( $ll );
+	}
+
+	if( isset( $lat ) && isset( $long ) )
+	{
+		$llstr = "$lat,$long";
+		$r.= '<img style="margin: 0em 0em 0.5em 1em; float:right;clear:right" width="250" height="250" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="http://maps.google.com/maps/api/staticmap?center='.$llstr.'&size=250x250&maptype=hybrid&sensor=false&markers=color:blue|label:X|'.$llstr.'" />';
+	}
+	elseif( $resource->has( "foaf:img", "foaf:depiction", "foaf:logo" ) )
+	{
+		$img = $resource->get( "foaf:img", "foaf:depiction", "foaf:logo" );
+		if( $img->has( "foaf:thumbnail" ) ) { $img = $img->get("foaf:thumbnail"); }
+		$r.= '<a href="'.$img->toString().'"><img style="margin: 0em 0em 0.5em 1em; border:0px;float:right;clear:right;max-width:200px" src="'.$img->toString().'" /></a>';
+	}	
+
+	$r.= "<div><a title='".htmlentities($resource->uri)."' href='".htmlentities($resource->uri)."' style='text-decoration:none'>".htmlentities($resource->g->shrinkURI($resource->uri))."</a></div>\n";
+	$r.="  <div class='resourcePropertyRows'>\n  <div class='resourcePropertyRow'>".join( "</div>\n  <div class='resourcePropertyRow'>", $plist )."</div></div><div style='clear:both;height:1px; overflow:hidden'>&nbsp;</div></div>";
+	return $r;
+}
+
+function dumpLiteralValue( $resource )
+{
+	$v = htmlspecialchars( $resource->triple["v"],ENT_COMPAT,"UTF-8" );
+	$v = preg_replace( "/\t/", "<span class='specialChar'>[tab]</span>", $v );
+	$v = preg_replace( "/\n/", "<span class='specialChar'>[nl]</span><br />", $v );
+	$v = preg_replace( "/\r/", "<span class='specialChar'>[cr]</span>", $v );
+	$v = preg_replace( "/  +/e", "\"<span class='specialChar'>\".str_repeat(\"␣\",strlen(\"$0\")).\"</span>\"", $v );
+	$r = '"'.$v.'"';
+
+	if( isset($resource->triple["l"]) && $resource->triple["l"])
+	{
+		$r.="@".$resource->triple["l"];
+	}
+	if( isset($resource->triple["d"]) )
+	{
+		$r.="^^".$resource->g->shrinkURI($resource->triple["d"]);
+	}
+	return "<span class='literalObject'>$r</span>";
+}
+function dumpValue( $resource )
+{
+	$label = $resource->dumpValueText();
+	if( $resource->hasLabel() )
+	{
+		$label = $resource->label();
+	}
+	$href = $resource->uri;
+	$href = "#".htmlentities($resource->uri);
+	return "<a href='".$href."' title='".$resource->uri."' class='resourceObject'>".$label."</a>";
+}
