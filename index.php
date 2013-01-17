@@ -20,7 +20,7 @@ if( isset( $_GET["uri"] ) )
 
 header( "Content-type: text/html; charset:utf-8" );
 require_once( "arc/ARC2.php" );
-require_once( "../Graphite.php" );
+require_once( "Graphite/Graphite.php" );
 ?>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
  "http://www.w3.org/TR/html4/strict.dtd">
@@ -74,8 +74,8 @@ body { text-align: center; }
 <?php
 	$d = array(
 'http://education.data.gov.uk/id/school/118217',
-'http://webscience.org/person/6',
 'http://eprints.ecs.soton.ac.uk/id/eprint/10053',
+'http://id.southampton.ac.uk/building/59',
 'http://data.totl.net/playingcards/',
 'http://dbpedia.org/resource/Southampton',
 );
