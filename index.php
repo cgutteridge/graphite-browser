@@ -6,6 +6,8 @@
 # No warrenty etc.
 # Ask if you want a different license.
 
+$next_id = 0;
+
 if( isset( $_GET["uri"] ) )
 {
 	$robot = 0;
@@ -31,6 +33,14 @@ require_once( "Graphite/Graphite.php" );
 </head>
 <body>
 <style type="text/css" media="all">@import url("browser.css")</style>
+<script>
+function more(id) {
+	if (document.getElementById(id+'-more').style.display != 'none') {
+		document.getElementById(id+'-more').style.display = 'none';
+		document.getElementById(id).style.display = 'inline';
+	}
+}
+</script>
 
 <?php
 
@@ -217,7 +227,22 @@ function dumpResource( $resource )
 			$pattern = "<span class='arrow'>&rarr;</span> <a title='%s' class='relation' href='%s'>%s</a> <span class='arrow'>&rarr;</span> %s";
 		}
 		$prop = $prop->toString();
-		$plist []= sprintf( $pattern, htmlentities($prop), htmlentities($prop), htmlentities($resource->g->shrinkURI($prop)), join( ", ",$olist ));
+		$MAX_OBJECTS = 4;
+		if( sizeof( $olist ) > $MAX_OBJECTS )
+		{
+			$headlist = array_splice( $olist, 0, $MAX_OBJECTS );
+			global $next_id;
+			$id = $next_id++;
+			
+			$values = "".join( ", ",$headlist );
+			$values.= " <a id='{$id}-more' onclick='more(\"$id\")' class='more'> ...show ".sizeof($olist)." more...</a>";
+			$values.= "<span id='{$id}' style='display:none'>". join( ", ",$olist )."</span>";
+		}
+		else
+		{	
+			$values = join( ", ",$olist );
+		}
+		$plist []= sprintf( $pattern, htmlentities($prop), htmlentities($prop), htmlentities($resource->g->shrinkURI($prop)), $values );
 	}
 	$r.= "\n<a name='".htmlentities($resource->uri)."'></a><div class='resourceBox'>\n";
 	$label = $resource->label();

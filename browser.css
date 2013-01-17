@@ -51,3 +51,7 @@ a.resourceObject {
 .resourcePropertyRow {
 	text-indent: -3em;
 }
+.more {
+	white-space: nowrap;
+	font-size: 70%;
+}
