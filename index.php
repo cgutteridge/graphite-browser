@@ -30,9 +30,9 @@ require_once( "Graphite/Graphite.php" );
 <head>
    <title>Q&amp;D RDF Browser</title>
    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+   <link rel="stylesheet" href="browser.css" type="text/css"></link>
 </head>
 <body>
-<style type="text/css" media="all">@import url("browser.css")</style>
 <script>
 function more(id) {
 	if (document.getElementById(id+'-more').style.display != 'none') {
