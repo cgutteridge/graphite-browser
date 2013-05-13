@@ -243,7 +243,7 @@ function dumpResource( $resource )
 			$id = $next_id++;
 			
 			$values = "".join( ", ",$headlist );
-			$values.= " <a id='{$id}-more' onclick='more(\"$id\")' class='more'> ...show ".sizeof($olist)." more...</a>";
+			$values.= ", <a id='{$id}-more' onclick='more(\"$id\")' class='more'> ...show ".sizeof($olist)." more...</a>";
 			$values.= "<span id='{$id}' style='display:none'>". join( ", ",$olist )."</span>";
 		}
 		else
